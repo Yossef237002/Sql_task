@@ -197,9 +197,6 @@ WHERE Dnumber = 100;
 
 5. Delete Mr. Kamel Mohamed's data from your database.
   DELETE FROM Employees WHERE FirstName = 'Kamel' AND LastName = 'Mohamed';
-
--- Temporary update your position to be his position (assuming you know the department he managed).
--- Here we assume you take over his department, which was managed by him.
 UPDATE Department
 SET MGRSSN = '102672'
 WHERE MGRSSN = (SELECT SSN FROM Employees WHERE FirstName = 'Kamel' AND LastName = 'Mohamed');
