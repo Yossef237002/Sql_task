@@ -1,0 +1,210 @@
+1. Display all the employees' data.
+SELECT * FROM Employees;
+
+2. Display the employee's first name, last name, salary, and department number.
+SELECT FirstName, LastName, Salary, Dno FROM Employees;
+
+ 3. Display all the projects' names, locations, and the department responsible for it.
+SELECT Pname, Plocation, Dnumb FROM Project;
+
+4. Display each employee's full name and their annual commission in an ANNUAL COMM column (alias).
+SELECT CONCAT(FirstName, ' ', LastName) AS FullName, (Salary * 12 * 0.1) AS ANNUAL_COMM FROM Employees;
+
+ 5. Display the employees' ID and name who earns more than 1000 LE monthly.
+SELECT SSN, CONCAT(FirstName, ' ', LastName) AS FullName FROM Employees WHERE Salary > 1000;
+
+ 6. Display the employees' ID and name who earns more than 10000 LE annually.
+SELECT SSN, CONCAT(FirstName, ' ', LastName) AS FullName FROM Employees WHERE Salary * 12 > 10000;
+
+ 7. Display the names and salaries of the female employees.
+SELECT CONCAT(FirstName, ' ', LastName) AS FullName, Salary FROM Employees WHERE Sex = 'F';
+
+ 8. Display each department ID and name managed by a manager with ID equals 968574.
+SELECT Dnumber, Dname FROM Department WHERE MGRSSN = '968574';
+
+ 9. Display the IDs, names, and locations of the projects controlled by department 10.
+SELECT Pnumber, Pname, Plocation FROM Project WHERE Dnumb = 10;
+
+ 10. Display the department ID, name, and the manager's ID and name.
+SELECT D.Dnumber, D.Dname, E.SSN AS ManagerID, CONCAT(E.FirstName, ' ', E.LastName) AS ManagerName
+FROM Department D
+JOIN Employees E ON D.MGRSSN = E.SSN;
+
+ 11. Display the name of the departments and the name of the projects under its control.
+SELECT D.Dname, P.Pname
+FROM Department D
+JOIN Project P ON D.Dnumber = P.Dnumb;
+
+ 12. Display the full data about all the dependents associated with the name of the employee they depend on.
+SELECT Dependent.*, CONCAT(E.FirstName, ' ', E.LastName) AS EmployeeName
+FROM Dependent
+JOIN Employees E ON Dependent.ESSN = E.SSN;
+
+13. Display (Using Union Function)
+ a. The name and the gender of the dependents that are female and depend on a female employee.
+ b. And the male dependents that depend on a male employee.
+SELECT Dependent.Dependent_name, Dependent.Sex
+FROM Dependent
+JOIN Employees ON Dependent.ESSN = Employees.SSN
+WHERE Dependent.Sex = 'F' AND Employees.Sex = 'F'
+UNION
+SELECT Dependent.Dependent_name, Dependent.Sex
+FROM Dependent
+JOIN Employees ON Dependent.ESSN = Employees.SSN
+WHERE Dependent.Sex = 'M' AND Employees.Sex = 'M';
+
+ 14. Display the full data of the employees who are managing any of the company's departments.
+SELECT E.*
+FROM Employees E
+JOIN Department D ON E.SSN = D.MGRSSN;
+
+ 15. Display the ID, name, and location of the projects in Cairo or Alex city.
+SELECT Pnumber, Pname, Plocation FROM Project WHERE City = 'Cairo' OR City = 'Alex';
+
+16. Display the projects' full data where the name starts with "a".
+SELECT * FROM Project WHERE Pname LIKE 'a%';
+
+ 17. Display all the employees in department 30 whose salary is between 1000 and 2000 LE monthly.
+SELECT * FROM Employees WHERE Dno = 30 AND Salary BETWEEN 1000 AND 2000;
+
+ 18. Retrieve the names of all employees in department 10 who work more than or equal to 10 hours per week on the "AL Rabwah" project.
+SELECT CONCAT(E.FirstName, ' ', E.LastName) AS FullName
+FROM Employees E
+JOIN Worksfor W ON E.SSN = W.ESSN
+JOIN Project P ON W.PNO = P.Pnumber
+WHERE E.Dno = 10 AND W.Hours >= 10 AND P.Pname = 'AL Rabwah';
+
+19. Find the names of the employees who are directly supervised by Kamel Mohamed.
+SELECT CONCAT(E.FirstName, ' ', E.LastName) AS FullName
+FROM Employees E
+JOIN Employees S ON E.SuperSSN = S.SSN
+WHERE S.FirstName = 'Kamel' AND S.LastName = 'Mohamed';
+
+ 20. For each project, list the project name and the total hours per week (for all employees) spent on that project.
+SELECT P.Pname, SUM(W.Hours) AS TotalHours
+FROM Project P
+JOIN Worksfor W ON P.Pnumber = W.PNO
+GROUP BY P.Pname;
+
+21. Retrieve the names of all employees who work on every project.
+SELECT CONCAT(E.FirstName, ' ', E.LastName) AS FullName
+FROM Employees E
+WHERE NOT EXISTS (
+    SELECT P.Pnumber
+    FROM Project P
+    WHERE NOT EXISTS (
+        SELECT W.ESSN
+        FROM Worksfor W
+        WHERE W.ESSN = E.SSN AND W.PNO = P.Pnumber
+    )
+)
+ORDER BY E.LastName, E.FirstName;
+
+ 22. Display the data of the department which has the smallest employee ID over all employees' IDs.
+SELECT D.*
+FROM Department D
+JOIN Employees E ON D.Dnumber = E.Dno
+ORDER BY E.SSN ASC
+LIMIT 1;
+
+23. For each department, retrieve the department name and the maximum, minimum, and average salary of its employees.
+SELECT D.Dname, MAX(E.Salary) AS MaxSalary, MIN(E.Salary) AS MinSalary, AVG(E.Salary) AS AvgSalary
+FROM Department D
+JOIN Employees E ON D.Dnumber = E.Dno
+GROUP BY D.Dname;
+
+24. List the last names of all managers who have no dependents.
+SELECT E.LastName
+FROM Employees E
+JOIN Department D ON E.SSN = D.MGRSSN
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Dependent Dep
+    WHERE Dep.ESSN = E.SSN
+);
+
+ 25. For each department, if its average salary is less than the average salary of all departments, display its number, name, and the number of its employees.
+SELECT D.Dnumber, D.Dname, COUNT(E.SSN) AS NumEmployees
+FROM Department D
+JOIN Employees E ON D.Dnumber = E.Dno
+GROUP BY D.Dnumber, D.Dname
+HAVING AVG(E.Salary) < (SELECT AVG(Salary) FROM Employees);
+
+ 26. Retrieve a list of employees and the projects they are working on ordered by department and within each department, ordered alphabetically by last name, first name.
+SELECT E.Dno, CONCAT(E.LastName, ' ', E.FirstName) AS FullName, P.Pname
+FROM Employees E
+JOIN Worksfor W ON E.SSN = W.ESSN
+JOIN Project P ON W.PNO = P.Pnumber
+ORDER BY E.Dno, E.LastName, E.FirstName;
+
+ 27. For each project located in Cairo City, find the project number, the controlling department name, the department manager's last name, address, and birthdate.
+SELECT P.Pnumber, D.Dname, E.LastName AS ManagerLastName, E.Address, E.BDATE
+FROM Project P
+JOIN Department D ON P.Dnumb = D.Dnumber
+JOIN Employees E ON D.MGRSSN = E.SSN
+WHERE P.City = 'Cairo';
+
+ 28. Make a list of all projects' numbers for projects that involve an employee whose last name is Mohamed, either as a worker or as a manager of the department that controls the project.
+SELECT DISTINCT P.Pnumber
+FROM Project P
+JOIN Worksfor W ON P.Pnumber = W.PNO
+JOIN Employees E ON W.ESSN = E.SSN
+WHERE E.LastName = 'Mohamed'
+UNION
+SELECT DISTINCT P.Pnumber
+FROM Project P
+JOIN Department D ON P.Dnumb = D.Dnumber
+JOIN Employees E ON D.MGRSSN = E.SSN
+WHERE E.LastName = 'Mohamed';
+
+ 29. Display the employee number and name who has no dependent on him/her (use EXISTS).
+SELECT E.SSN, CONCAT(E.FirstName, ' ', E.LastName) AS FullName
+FROM Employees E
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Dependent Dep
+    WHERE Dep.ESSN = E.SSN
+);
+
+Data Manipulating Language:
+ 1. Insert your personal data into the employee table as a new employee in department number 30.
+INSERT INTO Employees (FirstName, LastName, SSN, BDATE, Address, Sex, Salary, SuperSSN, Dno)
+VALUES ('YourFirstName', 'YourLastName', '102672', 'YYYY-MM-DD', 'YourAddress', 'YourSex', 'YourSalary', '112233', 30);
+
+ 2. Insert another employee with personal data for your friend as a new employee in department number 30.
+INSERT INTO Employees (FirstName, LastName, SSN, BDATE, Address, Sex, Dno)
+VALUES ('FriendFirstName', 'FriendLastName', '102660', 'YYYY-MM-DD', 'FriendAddress', 'FriendSex', 30);
+
+ 3. Insert a new department called "DEPT IT" with id 100, employee with SSN = 112233 as the manager.
+INSERT INTO Department (Dname, Dnumber, MGRSSN, MGRSTARTDATE)
+VALUES ('DEPT IT', 100, '112233', '2006-11-01');
+
+ 4. Mrs. Noha Mohamed moves to be the manager of the new department (id = 100).
+   a. Update her record in your database.
+UPDATE Department
+SET MGRSSN = (SELECT SSN FROM Employees WHERE FirstName = 'Noha' AND LastName = 'Mohamed')
+WHERE Dnumber = 100;
+
+     b. Update your record to be the department 20 manager.
+        UPDATE Department
+        SET MGRSSN = '102672'
+        WHERE Dnumber = 20;
+
+      c. Update your friend's data to be in your team (supervised by you).
+         UPDATE Employees
+         SET SuperSSN = '102672'
+         WHERE SSN = '102660';
+
+5. Delete Mr. Kamel Mohamed's data from your database.
+  DELETE FROM Employees WHERE FirstName = 'Kamel' AND LastName = 'Mohamed';
+
+-- Temporary update your position to be his position (assuming you know the department he managed).
+-- Here we assume you take over his department, which was managed by him.
+UPDATE Department
+SET MGRSSN = '102672'
+WHERE MGRSSN = (SELECT SSN FROM Employees WHERE FirstName = 'Kamel' AND LastName = 'Mohamed');
+
+-- 6. Upgrade your salary by 20 percent of its last value.
+UPDATE Employees
+SET Salary = Salary * 1.20
+WHERE SSN = '102672';
